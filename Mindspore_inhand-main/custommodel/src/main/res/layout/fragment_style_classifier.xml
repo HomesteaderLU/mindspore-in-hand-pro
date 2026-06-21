@@ -73,8 +73,8 @@
                 android:layout_height="48dp"
                 android:text="选择图片"
                 android:textSize="16sp"
-                android:backgroundTint="@color/colorPrimary"
-                android:textColor="@color/white"
+                android:backgroundTint="@color/main_tab_text_checked"
+                android:textColor="@color/black"
                 android:layout_marginBottom="16dp" />
 
             <!-- 识别结果卡片 -->
@@ -166,22 +166,6 @@
                         android:textSize="14sp"
                         android:textColor="@color/gray"
                         android:layout_marginBottom="16dp" />
-
-                    <!-- 所有风格的概率 -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="各风格概率分布："
-                        android:textSize="16sp"
-                        android:textStyle="bold"
-                        android:textColor="@color/black"
-                        android:layout_marginBottom="8dp" />
-
-                    <LinearLayout
-                        android:id="@+id/ll_probabilities"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical" />
 
                 </LinearLayout>
             </androidx.cardview.widget.CardView>

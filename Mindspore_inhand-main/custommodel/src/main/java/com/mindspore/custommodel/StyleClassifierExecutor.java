@@ -20,11 +20,22 @@ import android.graphics.Bitmap;
 import android.os.SystemClock;
 import android.util.Log;
 
+import com.mindspore.lite.LiteSession;
+import com.mindspore.lite.MSTensor;
+import com.mindspore.lite.Model;
+import com.mindspore.lite.config.CpuBindMode;
+import com.mindspore.lite.config.DeviceType;
+import com.mindspore.lite.config.MSConfig;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 
 /**
  * 图像风格分类模型执行器
@@ -38,10 +49,12 @@ public class StyleClassifierExecutor {
     private Context mContext;
     private boolean isModelLoaded = false;
     
-    // MindSpore Lite 模型实例（取消注释以使用）
-    // private Model model;
+    // MindSpore Lite 模型实例
+    private Model model;
+    private LiteSession session;
+    private MSConfig msConfig;
     
-    // 性能统计
+    private final int NUM_THREADS = 4;
     private long fullExecutionTime;
     private long preProcessTime;
     private long inferenceTime;
@@ -75,49 +88,63 @@ public class StyleClassifierExecutor {
 
     /**
      * 加载模型文件
-     * @param modelPath 模型文件路径（.ms 格式）
+     * 先从 assets 复制到内部存储，再从文件路径加载，提高兼容性
+     * @param assetPath assets 中的模型文件名（如 style_classifier_artbench.ms）
      * @return 是否加载成功
      */
-    public boolean loadModel(String modelPath) {
+    public boolean loadModel(String assetPath) {
         try {
-            // 实际项目中需要在这里加载 MindSpore 模型
-            Log.i(TAG, "Loading model from: " + modelPath);
-            
-            // TODO: 取消注释以下代码以使用真实的 MindSpore Lite API
-            /*
-            import com.mindspore.lite.MSContext;
-            import com.mindspore.lite.Model;
-            import com.mindspore.lite.DeviceInfo;
-            import com.mindspore.lite.DeviceType;
-            
-            // 初始化 MSContext
-            MSContext msContext = new MSContext();
-            msContext.init();
-            
-            // 配置 CPU 信息
-            DeviceInfo cpuDeviceInfo = new DeviceInfo();
-            cpuDeviceInfo.setDeviceType(DeviceType.DT_CPU);
-            cpuDeviceInfo.setThreadNum(NUM_THREADS);
-            msContext.addDeviceInfo(cpuDeviceInfo);
-            
-            // 创建并加载模型
-            Model model = new Model();
-            boolean ret = model.loadModel(modelPath, msContext);
-            
-            if (ret) {
-                this.model = model;
-                isModelLoaded = true;
-                Log.i(TAG, "Model loaded successfully: " + modelPath);
-            } else {
-                Log.e(TAG, "Failed to load model");
+            Log.i(TAG, "Loading model from assets: " + assetPath);
+
+            // 将模型从 assets 复制到内部存储
+            File modelFile = new File(mContext.getFilesDir(), assetPath);
+            if (!modelFile.exists()) {
+                Log.i(TAG, "Copying model from assets to: " + modelFile.getAbsolutePath());
+                try (InputStream is = mContext.getAssets().open(assetPath);
+                     FileOutputStream os = new FileOutputStream(modelFile)) {
+                    byte[] buffer = new byte[8192];
+                    int len;
+                    while ((len = is.read(buffer)) != -1) {
+                        os.write(buffer, 0, len);
+                    }
+                }
+                Log.i(TAG, "Model copied to internal storage");
             }
-            
-            return ret;
-            */
-            
-            // 当前为模拟模式
+
+            // 从文件路径加载模型
+            model = new Model();
+            boolean ret = model.loadModel(modelFile.getAbsolutePath());
+            if (!ret) {
+                Log.e(TAG, "Failed to load model: " + modelFile.getAbsolutePath());
+                return false;
+            }
+
+            // 创建配置
+            msConfig = new MSConfig();
+            if (!msConfig.init(DeviceType.DT_CPU, NUM_THREADS, CpuBindMode.MID_CPU)) {
+                Log.e(TAG, "MSConfig init failed");
+                return false;
+            }
+
+            // 创建会话
+            session = new LiteSession();
+            if (!session.init(msConfig)) {
+                Log.e(TAG, "LiteSession init failed");
+                msConfig.free();
+                return false;
+            }
+            msConfig.free();
+
+            // 编译图
+            if (!session.compileGraph(model)) {
+                Log.e(TAG, "Compile graph failed");
+                model.freeBuffer();
+                return false;
+            }
+            model.freeBuffer();
+
             isModelLoaded = true;
-            Log.i(TAG, "Style classification model loaded (simulation mode): " + modelPath);
+            Log.i(TAG, "Model loaded successfully: " + assetPath);
             return true;
         } catch (Exception e) {
             Log.e(TAG, "Error loading model: " + e.getMessage(), e);
@@ -169,13 +196,11 @@ public class StyleClassifierExecutor {
     }
 
     /**
-     * 运行推理（实际项目中调用 MindSpore API）
+     * 运行推理（调用 MindSpore Lite API）
      */
     private float[] runInference(ByteBuffer inputBuffer) {
-        // TODO: 取消注释以下代码以使用真实的 MindSpore Lite API
-        /*
         // 获取输入张量
-        List<MSTensor> inputs = model.getInputs();
+        List<MSTensor> inputs = session.getInputs();
         if (inputs == null || inputs.isEmpty()) {
             Log.e(TAG, "No input tensors found");
             return null;
@@ -184,46 +209,33 @@ public class StyleClassifierExecutor {
         MSTensor inputTensor = inputs.get(0);
         
         // 设置输入数据
-        byte[] inputData = inputBuffer.array();
-        inputTensor.setData(inputData);
+        inputTensor.setData(inputBuffer);
         
         // 执行推理
-        int ret = model.run();
-        if (ret != 0) {
-            Log.e(TAG, "Inference failed with error code: " + ret);
+        if (!session.runGraph()) {
+            Log.e(TAG, "Inference failed");
             return null;
         }
         
         // 获取输出张量
-        List<MSTensor> outputs = model.getOutputs();
+        List<String> tensorNames = session.getOutputTensorNames();
+        Map<String, MSTensor> outputs = session.getOutputMapByTensor();
         if (outputs == null || outputs.isEmpty()) {
             Log.e(TAG, "No output tensors found");
             return null;
         }
         
-        MSTensor outputTensor = outputs.get(0);
-        
-        // 获取输出数据
-        float[] outputData = outputTensor.getFloatData();
+        float[] outputData = null;
+        for (String tensorName : tensorNames) {
+            MSTensor output = outputs.get(tensorName);
+            if (output != null) {
+                outputData = output.getFloatData();
+                break;
+            }
+        }
         
         Log.d(TAG, "Inference completed, output size: " + outputData.length);
         return outputData;
-        */
-        
-        // 模拟推理结果（实际使用时删除）
-        float[] mockOutput = new float[STYLE_LABELS.length];
-        for (int i = 0; i < mockOutput.length; i++) {
-            mockOutput[i] = (float) Math.random();
-        }
-        
-        // 归一化为概率
-        float sum = 0;
-        for (float v : mockOutput) sum += v;
-        for (int i = 0; i < mockOutput.length; i++) {
-            mockOutput[i] /= sum;
-        }
-        
-        return mockOutput;
     }
 
     /**
@@ -305,6 +317,14 @@ public class StyleClassifierExecutor {
      */
     public void release() {
         isModelLoaded = false;
+        if (session != null) {
+            session.free();
+            session = null;
+        }
+        if (model != null) {
+            model.free();
+            model = null;
+        }
         Log.i(TAG, "StyleClassifierExecutor released");
     }
 

@@ -8,12 +8,12 @@ import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -30,6 +30,8 @@ import java.io.InputStream;
 
 public class StyleClassifierFragment extends Fragment {
 
+    private static final String TAG = "StyleClassifierFragment";
+    private static final String MODEL_NAME = "style_classifier_artbench.ms";
     private static final int PICK_IMAGE_REQUEST = 1;
     private static final int PERMISSION_REQUEST = 100;
 
@@ -40,8 +42,10 @@ public class StyleClassifierFragment extends Fragment {
     private TextView tvConfidence;
     private TextView tvExecutionTime;
     private CardView cardResult;
-    private LinearLayout llProbabilities;
     private Button btnSelectImage;
+
+    private StyleClassifierExecutor classifierExecutor;
+    private boolean isModelReady = false;
 
     @Nullable
     @Override
@@ -56,17 +60,38 @@ public class StyleClassifierFragment extends Fragment {
         tvConfidence = view.findViewById(R.id.tv_confidence);
         tvExecutionTime = view.findViewById(R.id.tv_execution_time);
         cardResult = view.findViewById(R.id.card_result);
-        llProbabilities = view.findViewById(R.id.ll_probabilities);
         btnSelectImage = view.findViewById(R.id.btn_select_image);
 
         btnSelectImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                if (!isModelReady) {
+                    Toast.makeText(getContext(), "模型正在加载中，请稍候...", Toast.LENGTH_SHORT).show();
+                    return;
+                }
                 checkPermissionAndSelectImage();
             }
         });
 
+        // 初始化模型执行器并加载模型
+        initModel();
+
         return view;
+    }
+
+    private void initModel() {
+        textResult.setText("正在加载模型...");
+        classifierExecutor = new StyleClassifierExecutor(getContext());
+        boolean loaded = classifierExecutor.loadModel(MODEL_NAME);
+        if (loaded) {
+            isModelReady = true;
+            textResult.setText("模型已就绪，请选择图片");
+            Log.i(TAG, "Model loaded from assets: " + MODEL_NAME);
+        } else {
+            isModelReady = false;
+            textResult.setText("模型加载失败，请确认模型文件存在");
+            Toast.makeText(getContext(), "模型加载失败，请确认 assets 中存在 " + MODEL_NAME, Toast.LENGTH_LONG).show();
+        }
     }
 
     private void checkPermissionAndSelectImage() {
@@ -96,7 +121,7 @@ public class StyleClassifierFragment extends Fragment {
                 ivPreview.setImageBitmap(bitmap);
                 tvPlaceholder.setVisibility(View.GONE);
                 cardResult.setVisibility(View.VISIBLE);
-                textResult.setText("图片已加载，正在推理...");
+                textResult.setText("正在推理...");
                 performInference(bitmap);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -120,17 +145,33 @@ public class StyleClassifierFragment extends Fragment {
 
     private void performInference(Bitmap bitmap) {
         try {
-            Thread.sleep(500);
-            String[] styles = {"抽象", "古典", "现代艺术", "印象派", "极简主义", "波普艺术", "写实"};
-            int randomIndex = (int) (Math.random() * styles.length);
-            tvPredictedStyle.setText(styles[randomIndex]);
-            tvConfidence.setText(String.format("%.2f%%", 85.0 + Math.random() * 14.0));
-            tvExecutionTime.setText("推理耗时: " + (int)(100 + Math.random() * 200) + "ms");
-            textResult.setText("推理完成！");
+            if (!isModelReady || classifierExecutor == null) {
+                textResult.setText("模型未就绪");
+                return;
+            }
+
+            StyleClassifierExecutor.StyleClassificationResult result = classifierExecutor.classify(bitmap);
+            if (result != null) {
+                tvPredictedStyle.setText(result.getPredictedStyle());
+                tvConfidence.setText(String.format("%.1f%%", result.getConfidence() * 100));
+                tvExecutionTime.setText("推理耗时: " + result.getExecutionTime() + "ms");
+                textResult.setText("推理完成！");
+            } else {
+                textResult.setText("推理失败：模型返回空结果");
+                Toast.makeText(getContext(), "推理失败", Toast.LENGTH_SHORT).show();
+            }
         } catch (Exception e) {
             e.printStackTrace();
             textResult.setText("推理失败: " + e.getMessage());
-            Toast.makeText(getContext(), "推理失败", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "推理失败: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (classifierExecutor != null) {
+            classifierExecutor.release();
         }
     }
 }
