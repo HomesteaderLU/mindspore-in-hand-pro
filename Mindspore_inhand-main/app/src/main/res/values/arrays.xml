@@ -4,21 +4,18 @@
         <item name="tab_experience">@drawable/experience_uncheck</item>
         <item name="tab_find">@drawable/college_uncheck</item>
         <item name="tab_me">@drawable/me_uncheck</item>
-        <item name="tab_style">@drawable/experience_uncheck</item>
     </integer-array>
 
     <integer-array name="main_tab_select">
         <item name="tab_experience">@drawable/experience_checked</item>
         <item name="tab_college">@drawable/college_checked</item>
         <item name="tab_me">@drawable/me_checked</item>
-        <item name="tab_style">@drawable/experience_checked</item>
     </integer-array>
 
     <string-array name="main_tab_title">
         <item>@string/main_tab_title_one</item>
         <item>@string/main_tab_title_two</item>
         <item>@string/main_tab_title_three</item>
-        <item>@string/main_tab_title_four</item>
     </string-array>
 
     <string-array name="tab_experience">

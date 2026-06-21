@@ -154,11 +154,10 @@ public class MainActivity extends BaseActivity<MainActivityPresenter> implements
         fragments.add(FragmentFactory.getInstance().getExperienceFragment());
 //        fragments.add(FragmentFactory.getInstance().getCollegeFragment());
         fragments.add(FragmentFactory.getInstance().getMeFragment());
-        fragments.add(FragmentFactory.getInstance().getStyleClassifierFragment());
         BasePagerAdapter adapter = new BasePagerAdapter(getSupportFragmentManager(), fragments);
         mVpHome.setAdapter(adapter);
         mVpHome.addOnPageChangeListener(new TabLayout.TabLayoutOnPageChangeListener(mTabLayout));
-        mVpHome.setOffscreenPageLimit(3);
+        mVpHome.setOffscreenPageLimit(2);
         mVpHome.setCurrentItem(0);
     }
 

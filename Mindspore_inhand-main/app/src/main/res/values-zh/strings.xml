@@ -20,8 +20,10 @@
     <string name="title_object">对象检测(图片)</string>
     <string name="title_object_camera">对象检测(实时)</string>
     <string name="title_pose_net"> 骨骼检测</string>
-    <string name="title_style_transfer">风格迁移</string>
-    <string name="title_custom_model">自定义模型</string>
+    <string name="title_style_transfer">证件照换底</string>
+    <string name="title_custom_model">图像风格检测</string>
+    <string name="title_style_migration">风格迁移</string>
+    <string name="title_id_photo_bg_change">证件照换底色</string>
     <string name="image_preview">图片预览</string>
     <string name="title_segmentation">人像分割</string>
     <string name="title_source">代码</string>

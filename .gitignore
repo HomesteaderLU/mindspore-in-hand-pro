@@ -25,6 +25,9 @@ imageObject/build/
 mindsporelibrary/build/
 styletransfer/build/
 
+# Duplicate
+Change_background/
+
 # Python
 __pycache__/
 *.pyc

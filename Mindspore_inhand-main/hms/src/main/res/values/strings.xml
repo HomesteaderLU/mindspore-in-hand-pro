@@ -47,5 +47,11 @@
     <string name="segmentation_fail">图像分割失败，再换一张图片试试</string>
     <string name="save_failure">保存失败</string>
     <string name="gesture_detected_failure">未检测到手势，再换一张图片试试</string>
+    <string name="id_photo_title">证件照换底色</string>
+    <string name="id_photo_original">原图</string>
+    <string name="id_photo_result">换底色结果</string>
+    <string name="id_photo_red">红底</string>
+    <string name="id_photo_white">白底</string>
+    <string name="id_photo_blue">蓝底</string>
 
 </resources>

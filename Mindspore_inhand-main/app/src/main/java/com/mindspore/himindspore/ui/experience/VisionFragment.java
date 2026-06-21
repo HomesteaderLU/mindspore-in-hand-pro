@@ -70,7 +70,7 @@ public class VisionFragment extends Fragment implements View.OnClickListener {
         view.findViewById(R.id.btn_object).setOnClickListener(this);  //onClickPhotoDetection
         view.findViewById(R.id.btn_object_camera).setOnClickListener(this);  //onClickCameraDetection
         view.findViewById(R.id.btn_posenet).setOnClickListener(this);  //onClickPoseNet
-        view.findViewById(R.id.btn_style_transfer).setOnClickListener(this);  //onClickStyleTransfer
+        view.findViewById(R.id.btn_style_transfer).setOnClickListener(this);  //onClickStyleTransfer -> 证件照换底
         view.findViewById(R.id.btn_segmentation).setOnClickListener(this);  //onClickSegmentation
         view.findViewById(R.id.btn_image).setOnClickListener(this);  //onClickImage
         view.findViewById(R.id.btn_dance).setOnClickListener(this);  //onClickSceneDetection
@@ -78,7 +78,9 @@ public class VisionFragment extends Fragment implements View.OnClickListener {
         view.findViewById(R.id.btn_text_recognition).setOnClickListener(this);  //onClickTextRecognition
         view.findViewById(R.id.btn_gesture).setOnClickListener(this);  //onClickGestureRecognition
         view.findViewById(R.id.btn_texttranslation).setOnClickListener(this);  //onClickTextTranslation
-        view.findViewById(R.id.btn_custom_model).setOnClickListener(this);  // 新增 自定义模型选择功能
+        view.findViewById(R.id.btn_custom_model).setOnClickListener(this);  // 图像风格检测
+        view.findViewById(R.id.btn_style_migration).setOnClickListener(this);  // 风格迁移
+        view.findViewById(R.id.btn_id_photo).setOnClickListener(this);  // 证件照换底色
 
 
         // 暂时隐藏智能写诗和舞蹈梦工厂
@@ -107,7 +109,7 @@ public class VisionFragment extends Fragment implements View.OnClickListener {
                 ARouter.getInstance().build("/hms/PosenetMainActivitys").navigation();
                 break;
             case R.id.btn_style_transfer:
-                ARouter.getInstance().build("/styletransfer/StyleMainActivity").navigation();
+                ARouter.getInstance().build("/hms/PortraitSegmentationActivity").navigation();
                 break;
             case R.id.btn_segmentation:
                 ARouter.getInstance().build("/hms/ImageSegmentationLiveAnalyseActivity").navigation();
@@ -131,7 +133,13 @@ public class VisionFragment extends Fragment implements View.OnClickListener {
                 ARouter.getInstance().build("/hms/TextTranslationActivity").navigation();
                 break;
             case R.id.btn_custom_model:
-                ARouter.getInstance().build("/custommodel/CustomModelMainActivity").navigation();
+                ARouter.getInstance().build("/custommodel/StyleClassifierActivity").navigation();
+                break;
+            case R.id.btn_style_migration:
+                ARouter.getInstance().build("/styletransfer/StyleMainActivity").navigation();
+                break;
+            case R.id.btn_id_photo:
+                ARouter.getInstance().build("/hms/IdPhotoActivity").navigation();
                 break;
         }
     }
