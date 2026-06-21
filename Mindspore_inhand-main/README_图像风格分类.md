@@ -64,11 +64,11 @@ FullyConnected(128→10) + Softmax                   → 10 类概率
 | 输入尺寸 | **32 × 32 × 3**（适配 ArtBench-10 原始尺寸） |
 | 输出类别 | 10 种艺术风格 |
 | 参数体积 | ~200K（轻量级，适合移动端） |
-| 推理模式 | **模拟模式**（当前返回随机结果，可用于 UI 体验） |
-| 推理时间 | ~100-300ms（模拟模式） |
+| 推理模式 | **真实模型推理**（加载 `style_classifier_artbench.ms`） |
+| 推理时间 | ~50-200ms（取决于设备性能） |
 | 训练框架 | MindSpore / PyTorch |
 
-> 💡 **切换到真实模型**: 去掉 `StyleClassifierExecutor.java` 中的 `TODO` 注释，加载 `.ms` 模型文件即可。
+> 💡 模型文件 `style_classifier_artbench.ms`（1.6 MB）位于 `custommodel/src/main/assets/`，首次运行时自动复制到内部存储。
 
 ---
 
@@ -117,18 +117,15 @@ pip install -r requirements.txt
 python train_with_artbench10.py
 ```
 
-生成 `.ms` 文件后放入 Android 项目的 `assets/` 目录，并取消注释 `StyleClassifierExecutor.java` 中的真实推理代码。
+生成 `.ms` 文件后替换 `custommodel/src/main/assets/style_classifier_artbench.ms` 即可更新模型。
 
 ---
 
 ## 🔍 常见问题
 
-### Q1: 为什么显示随机结果？
+### Q1: 模型是如何加载的？
 
-**A**: 当前为**模拟模式**，用于 UI 体验。要使用真实模型：
-1. 训练模型并转换为 `.ms` 格式
-2. 放入 `app/src/main/assets/` 
-3. 取消注释 `StyleClassifierExecutor.java` 中 `TODO` 部分的代码
+**A**: 应用启动时自动从 `assets/style_classifier_artbench.ms` 加载真实模型。首次运行会复制到内部存储目录，后续直接加载。如模型文件缺失会提示"模型加载失败"。
 
 ### Q2: 输入图片尺寸要求？
 
