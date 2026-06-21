@@ -1,0 +1,48 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# Android
+app/build/
+common/build/
+custommodel/build/
+customView/build/
+dance/build/
+hms/build/
+imageObject/build/
+mindsporelibrary/build/
+styletransfer/build/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+*.egg
+.venv/
+venv/
+*.so
+
+# Model files (large binaries)
+*.mindir
+*.ms
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Generated
+*.log
